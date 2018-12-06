@@ -45,10 +45,10 @@ class Ticket(db.Model):
 
     def __repr__(self):
         return '<Ticket: {0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n{12}\n>'.format(
-            self.ticket_id, self.telPhone, self.IdCard_num, self.ticket_date, self.start_from, self.end_to,
+            self.ticket_id, self.telPhone, self.idcard_num, self.ticket_date, self.start_from, self.end_to,
             self.train_number,
             self.passengers, self.passenger_num,
-            self.success_rate, self.price, self.status, self.createDate, self.updateDate)
+            self.success_rate, self.price, self.status, self.create_date, self.update_date)
 
     def serialize(self):
         """Return object data in easily serializeable format"""

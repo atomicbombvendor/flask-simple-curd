@@ -1,0 +1,46 @@
+
+
+        #tickets .datagrid-sort {
+            display: inline;
+            padding: 0 13px 0 0;
+            background: url('../img/datagrid_icons.png') no-repeat -64px center;
+        }
+
+        #tickets .datagrid-sort-desc {
+            display: inline;
+            padding: 0 13px 0 0;
+            background: url('../img/datagrid_icons.png') no-repeat -16px center;
+        }
+
+        #tickets .datagrid-sort-asc {
+            display: inline;
+            padding: 0 13px 0 0;
+            background: url('../img/datagrid_icons.png') no-repeat 0px center;
+        }
+
+        #tickets td {
+            font-size: 1em;
+            text-align: center;
+            border: 1px solid #98bf21;
+            padding: 3px 7px 2px 7px;
+        }
+
+        #tickets input {
+            border: 0;
+            background: transparent;
+            width: 100%;
+        }
+
+        .red {
+            color: red;
+        }
+
+        .top {
+            background: #CCCCCC;
+            cursor: pointer;
+        }
+
+        .tr_select {
+            font-size: 120%;
+            color: red;
+        }

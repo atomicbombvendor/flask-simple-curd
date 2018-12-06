@@ -1,8 +1,10 @@
 # coding=utf-8
+
 from flask import Flask, request, render_template, jsonify, redirect, url_for, json
 from create_app import app
 from models import db, Ticket
 from config import PAGE_SIZE
+
 
 @app.route('/')
 @app.route('/scan/all/', methods=['GET', 'POST'])
@@ -36,7 +38,7 @@ if update_info!='none'：
 """
 
 
-@app.route('/getargs')
+@app.route('/getargs/')
 def getArgs():
     page = request.args.get('Page', 1, type=int)
     search_info = request.args.get('SearchInfo', '', type=str)
@@ -44,6 +46,7 @@ def getArgs():
     update_info = request.args.get('UpdateInfo', '', type=str)
     sort_info = request.args.get('SortInfo', '', type=str)
     add_info = request.args.get('AddInfo', '', type=str)
+    print "getargs input>> "
     print page, del_info, sort_info, update_info, search_info, add_info
     if del_info == 'none' and sort_info == 'none' and update_info == 'none' and add_info == 'none':
         print '进行查找操作'
@@ -97,7 +100,7 @@ def getArgs():
 def search(search_info='', page=1):
     ticket_id, tel_phone, idcard_num = '', '', ''
     print search_info, page
-    if search_info != 'none' and search_info != u'undefined':
+    if search_info != 'none':
         search_info_t = []
         for x in search_info.split('&'):
             if x == 'undefined':
@@ -127,6 +130,7 @@ def search(search_info='', page=1):
             Ticket.tel_phone.like('%' + tel_phone + '%'),
             Ticket.idcard_num.like('%' + idcard_num + '%')
         ).order_by(Ticket.update_date.asc()).paginate(page, PAGE_SIZE, False)
+
     except Exception, e:
         print 'Error:', e
         result = '未找到数据'
@@ -145,14 +149,42 @@ def search(search_info='', page=1):
             tickets.append(pagination)
             object_list = paginate.items
             for i in object_list:
-                ticket = {'ticket_id': i.ticket_id, 'tel_phone': i.tel_phone, 'idcard_num': i.idcard_num,
-                          'ticket_date': i.ticket_date, 'start_from': i.start_from, 'end_to': i.end_to,
-                          'train_number': i.train_number, 'passengers': i.passengers, 'passenger_num': i.passenger_num,
-                          'success_rate': i.success_rate, 'price': i.price, 'status': i.status,
-                          'create_date': i.create_date, 'update_date': i.update_date}
-
-                tickets.append(ticket)
+                tickets.append(get_ticket(i))
             return jsonify(result=tickets)  # 返回数据到ajax
+
+
+@app.route('/sort/<sort_info>/<int:page>', methods=['GET', 'POST'])
+def sort(sort_info='', page=1):
+    print sort_info, page
+    sort_info = sort_info.split('&')
+    sort_info = ['' if x == 'undefined' else x for x in sort_info]
+    keyword = sort_info[0]
+    sort = sort_info[1]
+    print page, keyword, sort
+    print getattr(getattr(Ticket, keyword), sort)()
+    total_num = Ticket.query.filter().count()
+    '''根据变量来调用类对应的属性和方法，这里需要用到python的自省和反射,getattr(obj, attr)将返回obj中名为attr的属性的值'''
+    paginate = Ticket.query.filter().order_by(
+        getattr(getattr(Ticket, keyword), sort)()).paginate(page, PAGE_SIZE, False)
+
+    tickets = []
+    pagination = {'total_num': total_num, 'num': total_num, 'total_pages': paginate.pages, 'current_page': page}
+    tickets.append(pagination)
+    object_list = paginate.items
+    for i in object_list:
+        tickets.append(get_ticket(i))
+    return jsonify(result=tickets)
+
+
+def get_ticket(ticket_obj):
+    ticket = {'ticket_id': ticket_obj.ticket_id, 'tel_phone': ticket_obj.tel_phone, 'idcard_num': ticket_obj.idcard_num,
+              'ticket_date': ticket_obj.ticket_date, 'start_from': ticket_obj.start_from, 'end_to': ticket_obj.end_to,
+              'train_number': ticket_obj.train_number, 'passengers': ticket_obj.passengers,
+              'passenger_num': ticket_obj.passenger_num,
+              'success_rate': ticket_obj.success_rate, 'price': ticket_obj.price, 'status': ticket_obj.status,
+              'create_date': ticket_obj.create_date.strftime("%Y-%m-%d %H:%M:%S"),
+              'update_date': ticket_obj.update_date.strftime("%Y-%m-%d %H:%M:%S")}
+    return ticket
 
 
 if __name__ == '__main__':
