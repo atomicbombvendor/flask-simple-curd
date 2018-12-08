@@ -1,9 +1,10 @@
 # coding=utf-8
 
-from flask import Flask, request, render_template, jsonify, redirect, url_for, json
+from flask import request, render_template, jsonify, redirect, url_for
+
+from config import PAGE_SIZE, TABLE_NAME
 from create_app import app
 from models import db, Ticket
-from config import PAGE_SIZE, TABLE_NAME
 
 
 @app.route('/')
@@ -48,16 +49,17 @@ def getArgs():
     add_info = request.args.get('AddInfo', '', type=str)
     modify_status_value = request.args.get('modify_status_value', '', type=str)
     modify_status_info = request.args.get('modify_status_info', '', type=str)
+    page_size = request.args.get("PageSize", '', type=int)
 
     print "getargs input>> "
     print page, del_info, sort_info, update_info, search_info, add_info, modify_status_value, modify_status_info
     if modify_status_info == 'none' and sort_info == 'none' and update_info == 'none' and add_info == 'none':
         print '进行查找操作'
-        return redirect(url_for('search', search_info=search_info, page=page))
+        return redirect(url_for('search', search_info=search_info, page=page, page_size=page_size))
 
     if sort_info != 'none' and modify_status_info == 'none' and update_info == 'none' and add_info == 'none':
         print '进行排序操作'
-        return redirect(url_for('sort', page=page, sort_info=sort_info))
+        return redirect(url_for('sort', page=page, sort_info=sort_info, page_size=page_size))
 
     if modify_status_info != 'none' and modify_status_value is not None:
         print '进行更新操作'
@@ -91,8 +93,9 @@ def getArgs():
 
 
 @app.route('/search/<search_info>/', methods=['GET', 'POST'])
-@app.route('/search/<search_info>/<int:page>', methods=['GET', 'POST'])
-def search(search_info='', page=1):
+@app.route('/search/<search_info>/<int:page>/', methods=['GET', 'POST'])
+@app.route('/search/<search_info>/<int:page>/<int:page_size>', methods=['GET', 'POST'])
+def search(search_info='', page=1, page_size=PAGE_SIZE):
     ticket_id, tel_phone, idcard_num, status_t = '', '', '', None
     print search_info, page
     if search_info != 'none':
@@ -116,7 +119,7 @@ def search(search_info='', page=1):
     try:
         total_num = Ticket.query.filter().count()
         status_t = "1" if status_t is None else status_t
-        num, paginate = get_search_data(ticket_id, tel_phone, idcard_num, page, status_t)
+        num, paginate = get_search_data(ticket_id, tel_phone, idcard_num, page, status_t, page_size)
 
     except Exception, e:
         print 'Error:', e
@@ -134,7 +137,7 @@ def search(search_info='', page=1):
             print '共%s页数据,当前%s页' % (paginate.pages, page)
             tickets = []
             pagination = {'total_num': total_num, 'num': num, 'total_pages': paginate.pages, 'current_page': page,
-                          'per_page': PAGE_SIZE}
+                          'per_page': page_size}
             tickets.append(pagination)
             object_list = paginate.items
             for i in object_list:
@@ -142,7 +145,7 @@ def search(search_info='', page=1):
             return jsonify(result=tickets)  # 返回数据到ajax
 
 
-def get_search_data(ticket_id, tel_phone, idcard_num, page, status_t):
+def get_search_data(ticket_id, tel_phone, idcard_num, page, status_t, page_size):
     if str(status_t) == '0' or status_t is None:
         num = Ticket.query.filter(
             Ticket.ticket_id.like('%' + ticket_id + '%'),
@@ -154,7 +157,7 @@ def get_search_data(ticket_id, tel_phone, idcard_num, page, status_t):
             Ticket.ticket_id.like('%' + ticket_id + '%'),
             Ticket.tel_phone.like('%' + tel_phone + '%'),
             Ticket.idcard_num.like('%' + idcard_num + '%')
-        ).order_by(Ticket.update_date.asc()).paginate(page, PAGE_SIZE, False)
+        ).order_by(Ticket.update_date.asc()).paginate(page, page_size, False)
     else:
         num = Ticket.query.filter(
             Ticket.ticket_id.like('%' + ticket_id + '%'),
@@ -168,13 +171,14 @@ def get_search_data(ticket_id, tel_phone, idcard_num, page, status_t):
             Ticket.tel_phone.like('%' + tel_phone + '%'),
             Ticket.idcard_num.like('%' + idcard_num + '%'),
             Ticket.status == status_t
-        ).order_by(Ticket.update_date.asc()).paginate(page, PAGE_SIZE, False)
+        ).order_by(Ticket.update_date.asc()).paginate(page, page_size, False)
 
     return num, paginate
 
 
 @app.route('/sort/<sort_info>/<int:page>', methods=['GET', 'POST'])
-def sort(sort_info='', page=1):
+@app.route('/sort/<sort_info>/<int:page>/<int:page_size>', methods=['GET', 'POST'])
+def sort(sort_info='', page=1, page_size=PAGE_SIZE):
     print sort_info, page
     sort_info = sort_info.split('&')
     sort_info = ['' if x == 'undefined' else x for x in sort_info]
@@ -185,7 +189,7 @@ def sort(sort_info='', page=1):
     total_num = Ticket.query.filter().count()
     '''根据变量来调用类对应的属性和方法，这里需要用到python的自省和反射,getattr(obj, attr)将返回obj中名为attr的属性的值'''
     paginate = Ticket.query.filter().order_by(
-        getattr(getattr(Ticket, keyword), sort)()).paginate(page, PAGE_SIZE, False)
+        getattr(getattr(Ticket, keyword), sort)()).paginate(page, page_size, False)
 
     tickets = []
     pagination = {'total_num': total_num, 'num': total_num, 'total_pages': paginate.pages, 'current_page': page}
@@ -194,31 +198,6 @@ def sort(sort_info='', page=1):
     for i in object_list:
         tickets.append(get_ticket(i))
     return jsonify(result=tickets)
-
-
-@app.route('/update/<update_info>', methods=['GET', 'POST'])
-def update_event(update_info='', update_status_value=''):
-    print update_info
-    update_info = ['' if x == 'undefined' else x for x in update_info.split('&')]
-    print update_info
-    event_id = update_info[0]
-    keyword = update_info[1]
-    value = update_info[2]
-    print event_id, keyword, value
-    try:
-        db.session.execute('update %s set %s="%s" where ID=%s' % (TABLE_NAME, keyword, value, event_id))
-        p = Ticket.query.get(event_id)
-        # getattr(p, keyword) = value
-        # print p.ExpoName
-    except Exception, e:
-        print 'Error:', e
-        result = u'修改失败'
-        print result
-        return
-    else:
-        db.session.commit()
-        print '修改ID为%s的%s的值为%s' % (event_id, keyword, value)
-        return
 
 
 @app.route('/update/<update_info>/<update_status_value>', methods=['GET', 'POST'])

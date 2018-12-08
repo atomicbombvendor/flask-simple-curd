@@ -14,7 +14,8 @@ $(function () {
                 modify_status_info: $("#modify_status_info").val(),
                 modify_status_value: $("#modify_status_value").val(),
                 DelInfo: $("#del_info").val(),
-                AddInfo: $("#add_info").val()
+                AddInfo: $("#add_info").val(),
+                PageSize: $("#adjust_page_size").val()
             },
             success: function (data) {
 
@@ -261,11 +262,12 @@ $(function () {
             $("#ticket-info :checkbox").prop("checked", false);
         }
     });
-    // 状态选择
-    //把选中的列赋值给hidden_column输入框
-    // $("#status_select").change(function () {
-    //     var status = $("#status_select").val();
-    //     $("#status_select_column").val(status);
-    //     showColumn();
-    // });
+
+    $("#refresh_current_page").click(function () {
+        show();
+    });
+
+    $("#adjust_page_size").blur(function () {
+        show();
+    })
 });

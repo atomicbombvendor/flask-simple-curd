@@ -22,7 +22,7 @@
 <script>
     function show_content(parm) {
         var id = $(parm).attr("id").replace("&passengers", "");
-        var val = $("#" + id +"_content").val();
+        var val = $("#" + id + "_content").val();
         layer.open({
             type: 1,
             skin: 'layui-layer-demo', //样式类名
@@ -40,11 +40,11 @@
     电话:<input name='tel_phone' id="tel_phone">
     身份证:<input name='id_card_num' id='id_card_num'>
     状态选择:<select id="status_select" class="status_select" name="status_select">
-            <option value="0">所有</option>
-            <option value="1" selected="selected">未提交</option>
-            <option value="2">已提交</option>
-            <option value="3">已完成</option>
-        </select>
+    <option value="0">所有</option>
+    <option value="1" selected="selected">未提交</option>
+    <option value="2">已提交</option>
+    <option value="3">已完成</option>
+</select>
 
     <input type='hidden' id="del_info" value="none"/>
     <input type='hidden' id="sort_info" value="none"/>
@@ -55,13 +55,21 @@
     <input type='hidden' id="add_info" value="none"/>
     <input type='hidden' id="current_page" value="none"/>
     <input id="status_select_column" value="" type='hidden'/><br>
-    <button id="search" type='button' style="font-size:16px;">查找</button><br>
+    <input id="page_size" value="" type='hidden'/><br>
+    <button id="search" type='button' style="font-size:16px;">查找</button>
+    <br>
     <b id="showNum"></b><br>
 
 
     <!--分页-->
     <div id="paginationdemo" class="paginate">
-        <div id="paginate"></div>
+        <div class="tool">
+            <input type="button" id="refresh_current_page" value="手动刷新数据">
+            <label for="adjust_page_size">设置每页显示数量:</label>
+            <input type="number" id="adjust_page_size" value="50"/>
+        </div>
+        <div id="paginate">
+        </div>
     </div>
 
     <table id="tickets" width="100%" border="0" cellpadding="0" cellspacing="0">
@@ -122,7 +130,7 @@
                 <a href="#" sort="" name="create_date">添加日期</a>
                 <span class="datagrid-sort"></span>
             </th>
-            <th  width="6.9%" height="60px">
+            <th width="6.9%" height="60px">
                 <a href="#" sort="" name="update_date">更新日期</a>
                 <span class="datagrid-sort"></span>
             </th>
