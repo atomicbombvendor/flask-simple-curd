@@ -1,11 +1,7 @@
 $(function () {
     //页面加载时调用show()获取数据，此时搜索关键字全为空，所以后台返回全部数据
     show();
-    function createParam(val){
-        var o = new Object();
-        o.val = val;
-        return o;
-    }
+
     function show(page) {
         $.ajax({
             type: 'GET',
@@ -15,10 +11,18 @@ $(function () {
                 SearchInfo: $("#search_info").val(),
                 SortInfo: $("#sort_info").val(),
                 UpdateInfo: $("#update_info").val(),
+                modify_status_info: $("#modify_status_info").val(),
+                modify_status_value: $("#modify_status_value").val(),
                 DelInfo: $("#del_info").val(),
                 AddInfo: $("#add_info").val()
             },
             success: function (data) {
+
+                if (typeof data.result == "string" && data.result.search("error") !== -1) {
+                    alert(data.result.replace("error:", ""));
+                    return;
+                }
+
                 tickets = data.result.splice(1);     //result的第一项是页数信息，从第二项开始才是ticket数据
                 pagination = data.result[0];
                 total_num = pagination.total_num;
@@ -33,11 +37,22 @@ $(function () {
                 createPage(total_pages, current_page);  //创建分页
                 showNum(total_num, num);
                 showColumn();
+                restore_value();
             },
-            error: function () {
+            error: function (data) {
                 alert('error');
+                alert(data);
+
             }
         });
+    }
+
+    function restore_value() {
+        $("#modify_status_value").val("none");
+        $("#modify_status_info").val("none");
+        $("#update_info").val("none");
+        $("#add_info").val("none");
+        $("#del_info").val("none");
     }
 
     //显示数据总条数和符合查询条件的条数
@@ -74,7 +89,7 @@ $(function () {
             //for (var i=1;i<data.length;i++)
             $('#ticket-info').append(
                 "<tr>" +
-                "<td><span><input type='checkbox' name='select' id='select' value=" + data[i].ID + "></span></td>" +
+                "<td><span><input type='checkbox' name='select' id='select' value=" + data[i].ticket_id + "></span></td>" +
                 "<td>" + i + "</td>" +
                 "<input type='hidden' name='id' value=" + data[i].ticket_id + ">" +
                 "<td>" + data[i].ticket_id + "</td>" +
@@ -87,7 +102,7 @@ $(function () {
                 // "<td>" + "<textarea " + "id=" + data[i].ticket_id + "&passengers" + " readonly=\"readonly\" " +
                 // "onclick='layer_content(data[i].ticket_id)'>" + data[i].passengers + "</textarea>" +
                 "<td>" + "<a href='javascript:void(0);' onclick='show_content(this)' class='passengers_text' id=" + data[i].ticket_id + "&passengers >" + '查看详情' + "</a>" +
-                "<textarea style=\"display:none\" id="+ data[i].ticket_id +"_content >"+data[i].passengers+"</textarea></td>" +
+                "<textarea style=\"display:none\" id=" + data[i].ticket_id + "_content >" + data[i].passengers + "</textarea></td>" +
                 "<td>" + data[i].passenger_num + "</td>" +
                 "<td>" + data[i].success_rate + "</td>" +
                 "<td>" + data[i].price + "</td>" +
@@ -98,11 +113,11 @@ $(function () {
                 "</tr>");
         }
     }
-    
+
     //根据hidden_column输入框的值显示或隐藏列
     function showColumn() {
-        var column = $("#hidden_column").val();
-        if (column != '') {
+        var status = $("#status_select_column").val();
+        if (status != '') {
             select_column = column.toString().split(',');
             //alert(select_column);
             $('table tr').find("th").show();
@@ -119,7 +134,8 @@ $(function () {
         ticket_id = $('input[name="ticket_id"]').val();
         tel_phone = $('input[name="tel_phone"]').val();
         id_card_num = $('input[name="id_card_num"]').val();
-        $("#search_info").val(ticket_id + '&' + tel_phone + '&' + id_card_num); //为排序信息输入框赋值，以便后续翻页时取得该值
+        status = $('select[name="status_select"]').val();
+        $("#search_info").val(ticket_id + '&' + tel_phone + '&' + id_card_num + '&' + status); //为排序信息输入框赋值，以便后续翻页时取得该值
         $("#update_info").val('none');
         $("#del_info").val('none');
         $("#sort_info").val('none');
@@ -185,6 +201,45 @@ $(function () {
         }
     });
 
+    //根据复选框状态进行更新
+    $('#modify_status_1').bind('click', function () {
+        batch_modify_status("1")
+    });
+
+    //根据复选框状态进行更新
+    $('#modify_status_2').bind('click', function () {
+        batch_modify_status("2")
+    });
+
+    //根据复选框状态进行更新
+    $('#modify_status_3').bind('click', function () {
+        batch_modify_status("3")
+    });
+
+    //根据复选框状态进行更新
+    $('#only_import').bind('click', function () {
+        batch_modify_status("3")
+    });
+
+    function batch_modify_status(status_val) {
+        var ids = "";
+        $('input[type="checkbox"][name="select"]:checked').each(function () {
+            ids = ids + "&" + $(this).val();
+            $(this).css("background-color", "#FFFFCC");
+        });
+        ids = ids.substring(1, ids.Length);
+        if (ids) {
+            alert(ids);
+            $("#modify_status_info").val(ids);
+            $("#modify_status_value").val(status_val);
+            current_page = $('#current_page').val();
+            show(current_page);
+        } else {
+            alert('请至少选择一项！');
+            return false;
+        }
+    }
+
     //选中行变色
     $('#ticket-info').on('change', "td>span>input", function () {
         $(this).parent().parent().parent().toggleClass("tr_select");
@@ -199,4 +254,18 @@ $(function () {
         });
     });
 
+    $("#select_all").click(function () {
+        if (this.checked) {
+            $("#ticket-info :checkbox").prop("checked", true);
+        } else {
+            $("#ticket-info :checkbox").prop("checked", false);
+        }
+    });
+    // 状态选择
+    //把选中的列赋值给hidden_column输入框
+    // $("#status_select").change(function () {
+    //     var status = $("#status_select").val();
+    //     $("#status_select_column").val(status);
+    //     showColumn();
+    // });
 });

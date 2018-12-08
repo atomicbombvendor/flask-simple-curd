@@ -39,16 +39,25 @@
     订单序号:<input width="20px" name="ticket_id" id="ticket_id">
     电话:<input name='tel_phone' id="tel_phone">
     身份证:<input name='id_card_num' id='id_card_num'>
+    状态选择:<select id="status_select" class="status_select" name="status_select">
+            <option value="0">所有</option>
+            <option value="1" selected="selected">未提交</option>
+            <option value="2">已提交</option>
+            <option value="3">已完成</option>
+        </select>
 
     <input type='hidden' id="del_info" value="none"/>
     <input type='hidden' id="sort_info" value="none"/>
+    <input type='hidden' id="modify_status_info" value="none"/>
+    <input type='hidden' id="modify_status_value" value="none"/>
     <input type='hidden' id="update_info" value="none"/>
     <input type='hidden' id="search_info" value="none"/>
     <input type='hidden' id="add_info" value="none"/>
     <input type='hidden' id="current_page" value="none"/>
-    <input id="hidden_column" value="" type='hidden'/><br>
+    <input id="status_select_column" value="" type='hidden'/><br>
     <button id="search" type='button' style="font-size:16px;">查找</button><br>
     <b id="showNum"></b><br>
+
 
     <!--分页-->
     <div id="paginationdemo" class="paginate">
@@ -59,7 +68,7 @@
 
         <thead>
         <tr class="top">
-            <th width="2.2%">选择</th>
+            <th width="2.2%">选择<span><input type='checkbox' id='select_all' value="全选"/></span></th>
             <th width="2.2%">序号</th>
             <th width="4.4%">
                 <a href="#" id="ticket_id" name="ticket_id" sort="">火车票序号</a>
@@ -125,8 +134,11 @@
         <!--表格内容由createTable()动态生成-->
         </tbody>
     </table>
-    <button id="addRow" type="button" style="font-size:16px;">添加一行</button>
-    <button id="mutiple_del" type='button' style="font-size:16px;">删除</button>
+    <button id="modify_status_1" type="button" style="font-size:16px;">设为 未提交</button>
+    <button id="modify_status_2" type="button" style="font-size:16px;">设为 已提交</button>
+    <button id="modify_status_3" type="button" style="font-size:16px;">设为 已完成</button>
+    <button id="import_submit" type='button' style="font-size:16px;">导出并设为提交</button>
+    <button id="only_import" type='button' style="font-size:16px;">只导出</button>
 </form>
 </body>
 </html>

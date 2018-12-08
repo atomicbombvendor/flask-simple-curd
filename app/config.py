@@ -4,4 +4,4 @@ SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@127.0.0.1/test'
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 PAGE_SIZE = 2
-TABLE_NAME = 'tickets'
+TABLE_NAME = 'ticketinfo'
