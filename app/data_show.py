@@ -1,10 +1,17 @@
 # coding=utf-8
+import os
+import zipfile
 
-from flask import request, render_template, jsonify, redirect, url_for
+from flask import request, render_template, jsonify, redirect, url_for, send_from_directory, make_response
+import json
 
 from config import PAGE_SIZE, TABLE_NAME
 from create_app import app
 from models import db, Ticket
+
+ZIP_PATH = app.root_path + "\\static\\download\\"
+TMP_PATH = app.root_path + "\\static\\temp\\"
+ZIP_FILE_NAME = "ticket.zip"
 
 
 @app.route('/')
@@ -221,6 +228,81 @@ def batch_update_event(update_info='', update_status_value=1):
     return
 
 
+@app.route("/download")
+def downloader():
+    zip_all_data()
+
+    # 需要知道2个参数, 第1个参数是本地目录的path, 第2个参数是文件名(带扩展名)
+    directory = os.path.join(ZIP_PATH)  # 这里是下在目录，从工程的根目录写起，比如你要下载static/js里面的js文件，这里就要写“static/js”
+    response = make_response(send_from_directory(directory, ZIP_FILE_NAME, as_attachment=True))
+    response.headers["Content-Disposition"] = "attachment; filename={}".format(ZIP_FILE_NAME.encode().decode('latin-1'))
+    return response
+
+
+def zip_all_data():
+    # 需要考虑 status 字段
+    current_passenger_num = 0
+    ticket_info_node, passenger_info_node = '', ''
+    tickets = Ticket.query.filter().all()
+    for ticket_obj in tickets:
+        # todo 考虑存放多个乘车日期
+        ticket_date = ticket_obj.ticket_date
+        start_from = ticket_obj.start_from
+        end_to = ticket_obj.end_to
+        train_number = ticket_obj.train_number
+        passenger_obj = json.loads(byteify(ticket_obj.passengers))
+        for passenger in passenger_obj:
+            name = passenger['name']
+            id_card_num = passenger['id']
+            ticket_info_node_t, passenger_info_node_t = get_xml_ticket(ticket_date, start_from, end_to, train_number, name,
+                                                                   id_card_num)
+
+            ticket_info_node = ticket_info_node + ticket_info_node_t
+            passenger_info_node = passenger_info_node + passenger_info_node_t
+
+            current_passenger_num = current_passenger_num + 1
+            # 重新设置
+            if current_passenger_num % 10 == 0 and current_passenger_num / 10 > 0:
+                generate_xml(current_passenger_num, ticket_info_node, passenger_info_node)
+                ticket_info_node, passenger_info_node = '', ''
+
+    # 处理剩下的
+    if ticket_info_node is not '' or passenger_info_node is not '':
+        current_passenger_num = current_passenger_num + 10
+        generate_xml(current_passenger_num, ticket_info_node, passenger_info_node)
+
+    zip_dir()
+
+
+# 生成xml内容
+def get_xml_ticket(ticket_date, start_from, end_to, train_number, name, id_card_num):
+    ticket_info_node, passenger_info_node = '', ''
+    ticket_date_node = "<date>" + ticket_date + "</date>"
+    start_from_node = "<start>" + start_from + "</start>"
+    end_to_node = "<end_to>" + end_to + "</end_to>"
+    train_number_node = "<train_number>" + train_number + "</train_number>"
+    name_node = "<name>" + name + "</name>"
+    id_card_num_node = "<id_card_num>" + id_card_num + "</id_card_num>"
+
+    ticket_info_node = "<ticket>" + ticket_info_node + ticket_date_node + start_from_node + end_to_node + train_number_node + name_node + id_card_num_node + "</ticket>"
+    passenger_info_node = "<passenger>" + passenger_info_node + name_node + id_card_num_node + "</passenger>"
+
+    return ticket_info_node, passenger_info_node
+
+
+def generate_xml(current_passenger_num, ticket_info_node, passenger_info_node):
+    file_name = str(current_passenger_num / 10)
+    xml_header = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+    ticket_info = xml_header + "<tickets>" + ticket_info_node + "</tickets>"
+    passenger_info = xml_header + "<passengers>" + passenger_info_node + "</passengers>"
+
+    ticket1_name = TMP_PATH + "ticket_" + file_name + ".xml"
+    create_file(ticket_info, ticket1_name)
+
+    passenger2_name = TMP_PATH + "passenger_" + file_name + ".xml"
+    create_file(passenger_info, passenger2_name)
+
+
 def get_ticket(ticket_obj):
     ticket = {'ticket_id': ticket_obj.ticket_id, 'tel_phone': ticket_obj.tel_phone, 'idcard_num': ticket_obj.idcard_num,
               'ticket_date': ticket_obj.ticket_date, 'start_from': ticket_obj.start_from, 'end_to': ticket_obj.end_to,
@@ -245,6 +327,38 @@ def translate_status(status):
 
     if str(status) == '3':
         return '已完成'
+
+
+def byteify(input):
+    if isinstance(input, dict):
+        return {byteify(key): byteify(value) for key, value in input.iteritems()}
+    elif isinstance(input, list):
+        return [byteify(element) for element in input]
+    elif isinstance(input, unicode):
+        return input.encode('utf-8')
+    else:
+        return input
+
+
+def create_file(file_content, file_name):
+    if os.path.exists(file_name):
+        os.remove(file_name)
+
+    file1 = open(file_name, "w")
+    file1.write(byteify(file_content))
+    file1.close()
+
+
+def zip_dir():
+    zip_file_path = ZIP_PATH + ZIP_FILE_NAME
+    if os.path.exists(zip_file_path):
+        os.remove(zip_file_path)
+    zip1 = zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED)
+    for path, dirnames, filenames in os.walk(TMP_PATH):
+        fpath = path.replace(TMP_PATH, '')
+        for filename in filenames:
+            zip1.write(os.path.join(path, filename), os.path.join(fpath, filename))
+    zip1.close()
 
 
 if __name__ == '__main__':
