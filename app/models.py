@@ -13,11 +13,11 @@ class Ticket(db.Model):
     ticket_id = db.Column(db.String(20), primary_key=True, nullable=False)
     tel_phone = db.Column(db.String(11), nullable=False)
     idcard_num = db.Column(db.String(18), nullable=False)
-    ticket_date = db.Column(db.String(10), nullable=False)
-    start_from = db.Column(db.String(20), nullable=False)
-    end_to = db.Column(db.String(20), nullable=False)
-    train_number = db.Column(db.String(20), nullable=False)
-    passengers = db.Column(db.TEXT, nullable=False)
+    ticket_date = db.Column(db.TEXT, nullable=False)  # 存放多个
+    start_from = db.Column(db.TEXT, nullable=False)  # 存放多个
+    end_to = db.Column(db.TEXT, nullable=False)  # 存放多个
+    train_number = db.Column(db.TEXT, nullable=False)  # 存放多个
+    passengers = db.Column(db.TEXT, nullable=False)  # 存放多个
     passenger_num = db.Column(db.Integer, nullable=False)
     success_rate = db.Column(db.Integer, nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -25,9 +25,14 @@ class Ticket(db.Model):
     create_date = db.Column(db.TIMESTAMP(True), nullable=False)
     update_date = db.Column(db.TIMESTAMP(True), nullable=False)
 
+    # add new column
+    seat_type = db.Column(db.TEXT, nullable=True)  # 存放多个
+    is_student = db.Column(db.Integer, nullable=True)
+    from_to = db.Column(db.TEXT, nullable=True)  # 存放单个
+
     def __init__(self, ticket_id, tel_phone, idcard_num, ticket_date, start_from, end_to, train_number, passengers,
                  passenger_num,
-                 success_rate, price, status):
+                 success_rate, price, status, seat_type, is_student, from_to):
         self.ticket_id = ticket_id
         self.tel_phone = tel_phone
         self.idcard_num = idcard_num
@@ -43,11 +48,16 @@ class Ticket(db.Model):
         self.create_date = datetime.now()
         self.update_date = datetime.now()
 
+        self.seat_type = seat_type
+        self.is_student = is_student
+        self.from_to = from_to
+
     def __repr__(self):
-        return '<Ticket: {0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n{12}\n>'.format(
+        return '<Ticket: {0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n{12}\n{13}\n{14}\n{15}>'.format(
             self.ticket_id, self.telPhone, self.idcard_num, self.ticket_date, self.start_from, self.end_to,
             self.train_number,
             self.passengers, self.passenger_num,
+            self.from_to, self.seat_type, self.is_student,
             self.success_rate, self.price, self.status, self.create_date, self.update_date)
 
     def serialize(self):
@@ -62,6 +72,9 @@ class Ticket(db.Model):
             'train_number': self.train_number,
             'passengers': self.passengers,
             'passenger_num': self.passenger_num,
+            'from_to': self.from_to,
+            'seat_type': self.seat_type,
+            'is_student': self.is_student,
             'success_rate': self.success_rate,
             'price': self.price,
             'status': self.status,

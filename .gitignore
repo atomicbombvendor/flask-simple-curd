@@ -14,3 +14,6 @@ yarn-error.log*
 *.njsproj
 *.sln
 venv/*
+app/static/temp/*
+app/static/download/*
+*.pyc
