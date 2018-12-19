@@ -3,7 +3,6 @@ import json
 import os
 
 from flask import request, render_template, jsonify, redirect, url_for, send_from_directory, make_response
-import random
 from app.file_tool import byteify, zip_dir, create_file, generate_xml, delete_path
 from app.model_tool import get_tid, get_price, get_from_to, get_ticket_json2
 from app.txt_process import get_ticket_json, get_contact_info, get_passenger
