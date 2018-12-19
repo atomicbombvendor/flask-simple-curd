@@ -3,8 +3,9 @@ import json
 import os
 
 from flask import request, render_template, jsonify, redirect, url_for, send_from_directory, make_response
-
+import random
 from app.file_tool import byteify, zip_dir, create_file, generate_xml, delete_path
+from app.model_tool import get_tid, get_price, get_from_to, get_ticket_json2
 from app.txt_process import get_ticket_json, get_contact_info, get_passenger
 from app.xml_process import get_ticket, get_xml_ticket
 from config import PAGE_SIZE, TABLE_NAME
@@ -241,6 +242,46 @@ def downloader():
     response = make_response(send_from_directory(directory, ZIP_FILE_NAME, as_attachment=True))
     response.headers["Content-Disposition"] = "attachment; filename={}".format(ZIP_FILE_NAME.encode().decode('latin-1'))
     return response
+
+
+# 小程序提交任务请求
+@app.route('/wx/')
+def wx_submit():
+    account = request.args.get('account', '', type=str)
+    account_password = request.args.get('account_password', '', type=str)
+    train_number = request.args.get('train_number', '', type=str)
+    start_from = request.args.get('start_from', '', type=str)
+    end_to = request.args.get('end_to', '', type=str)
+    ticket_date = request.args.get('ticket_date', '', type=str)
+    seat = request.args.get('seat', '', type=str)
+    passengers = request.args.get('passengers', '', type=str)
+    percent = request.args.get("percent", '', type=str)
+    tel_phone = request.args.get("tel_phone", '', type=str)
+    wechat_id = request.args.get("wechat_id", '', type=str)
+    qq_number = request.args.get("qq_number", '', type=str)
+    passenger_num = request.args.get("passenger_num", '', type=str)
+
+    tid = get_tid()
+
+    ticket = Ticket(ticket_id=tid,
+                    tel_phone=tel_phone,
+                    idcard_num="",
+                    ticket_date=ticket_date,
+                    start_from=start_from,
+                    end_to=end_to,
+                    train_number=train_number,
+                    passengers=passengers,
+                    passenger_num=passenger_num,
+                    success_rate=percent,
+                    price=get_price(passenger_num, percent),
+                    status=0,
+                    seat_type=seat,
+                    is_student=0,
+                    from_to=get_from_to(start_from, end_to))
+
+    result = db.session.add(ticket)
+    db.session.commit()
+    return jsonify(result=get_ticket_json2(ticket))
 
 
 # 生成xml

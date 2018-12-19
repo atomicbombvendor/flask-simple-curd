@@ -35,7 +35,7 @@ class Ticket(db.Model):
                  success_rate, price, status, seat_type, is_student, from_to):
         self.ticket_id = ticket_id
         self.tel_phone = tel_phone
-        self.idcard_num = idcard_num
+        self.idcard_num = "" if idcard_num == "" else idcard_num
         self.ticket_date = ticket_date
         self.start_from = start_from
         self.end_to = end_to
@@ -54,7 +54,7 @@ class Ticket(db.Model):
 
     def __repr__(self):
         return '<Ticket: {0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}\n{8}\n{9}\n{10}\n{11}\n{12}\n{13}\n{14}\n{15}>'.format(
-            self.ticket_id, self.telPhone, self.idcard_num, self.ticket_date, self.start_from, self.end_to,
+            self.ticket_id, self.tel_phone, self.idcard_num, self.ticket_date, self.start_from, self.end_to,
             self.train_number,
             self.passengers, self.passenger_num,
             self.from_to, self.seat_type, self.is_student,
@@ -64,8 +64,8 @@ class Ticket(db.Model):
         """Return object data in easily serializeable format"""
         return {
             'ticket_id': self.ticket_id,
-            'telPhone': self.tel_phone,
-            'IdCard_num': self.idcard_num,
+            'tel_phone': self.tel_phone,
+            'idcard_num': self.idcard_num,
             'ticket_date': self.ticket_date,
             'start_from': self.start_from,
             'end_to': self.end_to,
